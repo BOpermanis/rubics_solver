@@ -27,7 +27,9 @@ face_coordinate =  {
         "right": (2, 2, 2, 2), # o (default)
         "left": (2, 2, 2, 2), # w (default)
     }
-
+# face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 1, 1), 'up': (0, 0, 2, 2), 'down': (1, 1, 2, 2), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
+# face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 1, 1), 'up': (0, 0, 2, 2), 'down': (1, 1, 2, 2), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
+face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 2, 2), 'up': (1, 1, 2, 2), 'down': (1, 1, 0, 0), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
 
 # location -> colors in rot 0 (at first ordered by location for easier definition by human)
 piece_colors = [
@@ -111,3 +113,4 @@ if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
     print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
+    print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
