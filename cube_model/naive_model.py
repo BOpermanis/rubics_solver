@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 from collections import Counter
+from copy import deepcopy
 
 @dataclass
 class TwistAction:
@@ -10,7 +11,17 @@ class TwistAction:
 @dataclass
 class CubeState:
     loc = np.reshape(np.arange(0, 8, dtype=int), (2, 2, 2)) # first coordinate is always zero
-    rots = np.zeros((2, 2, 2), int) # first coordinate is always zero 
+    cols = np.array((
+    ("r", "g", "o"), #0 # never touch this
+    ("r", "g", "w"), #1
+    ("r", "b", "o"), #2
+    ("r", "b", "w"), #3
+    ("y", "g", "o"), #4
+    ("y", "g", "w"), #5
+    ("y", "b", "o"), #6
+    ("y", "b", "w")  #7
+    ), str) 
+
 
 
 colors_full = ["red", "yellow", "green", "blue", "orange", "white"]
@@ -28,53 +39,46 @@ face_coordinate =  {
         "left": (2, 2, 2, 2), # w (default)
     }
 
-# location -> colors in rot 0 (at first ordered by location for easier definition by human)
-piece_colors = [
-    ("r", "g", "o"), #0
-    ("r", "g", "w"), #1
-    ("r", "b", "o"), #2
-    ("r", "b", "w"), #3
-    ("y", "g", "o"), #4
-    ("y", "g", "w"), #5
-    ("y", "b", "o"), #6
-    ("y", "b", "w")  #7
-]
-piece_colors = np.asarray(piece_colors).reshape((-1, 3)) # reshape from id -> colors
 
-cntr = Counter(piece_colors.flatten())
+cntr = Counter(CubeState().cols.flatten())
 assert len(cntr) == 6 and cntr.most_common()[0][1] == 4, cntr
 
 
-def render_face(loc, rots, fname):
-
-    colors = piece_colors[loc.flatten(),:]
-    colors = colors[np.arange(4), (rots.flatten() + face_coordinate[fname]) % 3].reshape((2,2))
-    # print(loc)
-    # exit()
+def render_face(loc, cols, fname):
+    colors = cols[loc.flatten(),face_coordinate[fname]].reshape((2,2))
     return colors, loc
 
 
+def twist_on_colors(new_cstate, ids, i1, i2, twist):
+    match twist:
+        case 1 :
+            new_cstate.cols[ids[:,None],[i1, i2]] = new_cstate.cols[ids[:,None],[i2, i1]]
+        case -1 :
+            new_cstate.cols[ids[:,None],(i2, i1)] = new_cstate.cols[ids[:,None],(i1, i2)]
+        case _:
+            return
+
 def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
-    new_cstate = CubeState()
+    new_cstate = deepcopy(cstate)
     new_cstate.loc[1,:,:] = np.rot90(cstate.loc[1,:,:], action.twists[0], axes=(0, 1))
     new_cstate.loc[:,1,:] = np.rot90(cstate.loc[:,1,:], action.twists[1], axes=(0, 1))
     new_cstate.loc[:,:,1] = np.rot90(cstate.loc[:,:,1], action.twists[2], axes=(0, 1))
 
-    new_cstate.rots[1,:,:] = (cstate.rots[1,:,:] + action.twists[0]) % 3
-    new_cstate.rots[:,1,:] = (cstate.rots[:,1,:] + action.twists[1]) % 3
-    new_cstate.rots[:,:,1] = (cstate.rots[:,:,1] + action.twists[2]) % 3
-    
+    twist_on_colors(new_cstate, new_cstate.loc[1,:,:].flatten(), 1, 2, action.twists[0])
+    twist_on_colors(new_cstate, new_cstate.loc[:,1,:].flatten(), 0, 2, action.twists[1])
+    twist_on_colors(new_cstate, new_cstate.loc[:,:,1].flatten(), 0, 1, action.twists[2])
+        
     return new_cstate
 
 
 def render_cube(cstate: CubeState):
     return {
-        "front":render_face(cstate.loc[0,:, :], cstate.rots[0,:, :], "front"),
-        "back":render_face(cstate.loc[1,:, :], cstate.rots[1,:, :], "back"),
-        "up":render_face(cstate.loc[:,0, :], cstate.rots[:,0, :], "up"),
-        "down":render_face(cstate.loc[:,1, :], cstate.rots[:,1, :], "down"),
-        "right":render_face(cstate.loc[:,:, 1], cstate.rots[:,:, 1], "right"),
-        "left":render_face(cstate.loc[:,:, 0], cstate.rots[:,:, 0], "left"),
+        "front":render_face(cstate.loc[0,:, :], cstate.cols, "front"),
+        "back":render_face(cstate.loc[1,:, :], cstate.cols, "back"),
+        "up":render_face(cstate.loc[:,0, :], cstate.cols, "up"),
+        "down":render_face(cstate.loc[:,1, :], cstate.cols, "down"),
+        "right":render_face(cstate.loc[:,:, 1], cstate.cols, "right"),
+        "left":render_face(cstate.loc[:,:, 0], cstate.cols, "left"),
     }
 
 
@@ -114,7 +118,9 @@ if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 0)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
+    print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
-    print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 1, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 1, 0)))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, -1, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 1)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, -1)))))
