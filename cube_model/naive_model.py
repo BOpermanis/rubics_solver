@@ -112,5 +112,5 @@ def pretty_render(cstate):
 if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
-    print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
-    print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
+    print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
