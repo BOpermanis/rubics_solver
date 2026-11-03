@@ -27,9 +27,6 @@ face_coordinate =  {
         "right": (2, 2, 2, 2), # o (default)
         "left": (2, 2, 2, 2), # w (default)
     }
-# face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 1, 1), 'up': (0, 0, 2, 2), 'down': (1, 1, 2, 2), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
-# face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 1, 1), 'up': (0, 0, 2, 2), 'down': (1, 1, 2, 2), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
-face_coordinate = {'front': (0, 0, 0, 0), 'back': (0, 0, 2, 2), 'up': (1, 1, 2, 2), 'down': (1, 1, 0, 0), 'right': (1, 2, 1, 2), 'left': (2, 1, 2, 1)}
 
 # location -> colors in rot 0 (at first ordered by location for easier definition by human)
 piece_colors = [
@@ -49,15 +46,12 @@ assert len(cntr) == 6 and cntr.most_common()[0][1] == 4, cntr
 
 
 def render_face(loc, rots, fname):
-    loc = loc.flatten()
-    rots = rots.flatten()
 
-    # print(fname, loc)
-
-    colors = piece_colors[loc,:]
-    colors = colors[np.arange(4), face_coordinate[fname]].reshape((2,2))
-
-    return colors
+    colors = piece_colors[loc.flatten(),:]
+    colors = colors[np.arange(4), (rots.flatten() + face_coordinate[fname]) % 3].reshape((2,2))
+    # print(loc)
+    # exit()
+    return colors, loc
 
 
 def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
@@ -79,38 +73,48 @@ def render_cube(cstate: CubeState):
         "back":render_face(cstate.loc[1,:, :], cstate.rots[1,:, :], "back"),
         "up":render_face(cstate.loc[:,0, :], cstate.rots[:,0, :], "up"),
         "down":render_face(cstate.loc[:,1, :], cstate.rots[:,1, :], "down"),
-        "right":render_face(cstate.loc[:,:, 0], cstate.rots[:,:, 0], "right"),
-        "left":render_face(cstate.loc[:,:, 1], cstate.rots[:,:, 1], "left"),
+        "right":render_face(cstate.loc[:,:, 1], cstate.rots[:,:, 1], "right"),
+        "left":render_face(cstate.loc[:,:, 0], cstate.rots[:,:, 0], "left"),
     }
 
 
-def fill_2x2(y, x, faces_flat, face):
-    faces_flat[y:(y+2), x:(x+2)] = face
+def fill_2x2(y, x, faces_flat, ids_flat, face):
+    faces_flat[y:(y+2), x:(x+2)] = face[0]
+    ids_flat[y:(y+2), x:(x+2)] = face[1]
+
+
+def apply_trans(fun, *arrs):
+    return tuple(map(fun, arrs))
 
 
 def render_cube_arr(cstate: CubeState):
     faces = render_cube(cstate)
     faces_flat = np.zeros((8, 6), str)
+    ids_flat = np.zeros((8, 6), str)
     faces_flat[...] = " "
-    fill_2x2(0, 2, faces_flat, faces["up"])
-    fill_2x2(2, 2, faces_flat, faces["front"])
-    fill_2x2(4, 2, faces_flat, faces["down"])
-    fill_2x2(6, 2, faces_flat, faces["back"])
-    fill_2x2(2, 0, faces_flat, faces["left"])
-    fill_2x2(2, 4, faces_flat, faces["right"])
-    return faces_flat
+    ids_flat[...] = " "
+    fill_2x2(0, 2, faces_flat, ids_flat, apply_trans(np.flipud,*faces["up"]))
+    fill_2x2(2, 2, faces_flat, ids_flat, faces["front"])
+    fill_2x2(4, 2, faces_flat, ids_flat, faces["down"])
+    fill_2x2(6, 2, faces_flat, ids_flat, apply_trans(np.flipud,*faces["back"]))
+    fill_2x2(2, 0, faces_flat, ids_flat, apply_trans(lambda a: np.rot90(a, k=-1), *faces["left"]))
+    fill_2x2(2, 4, faces_flat, ids_flat, apply_trans(lambda a: np.flipud(np.rot90(a, k=1)), *faces["right"]))
+    return faces_flat, ids_flat
 
 
 def pretty_render(cstate):
-    arr = render_cube_arr(cstate)
+    col_arr, ids_arr = render_cube_arr(cstate)
     s = ""
-    for i in range(len(arr)):
-        s += " ".join(arr[i,:]) + "\n"
+    for i in range(len(col_arr)):
+        s += " ".join(col_arr[i,:]) + "   " + " ".join(ids_arr[i,:]) + "\n"
     return s
 
 
 if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
-    print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
+    print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 1, 0)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, -1, 0)))))
