@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from collections import Counter
 from copy import deepcopy
@@ -9,10 +9,7 @@ class TwistAction:
     twist: int # rotation around the axis -1, 0, 1
 
 
-@dataclass
-class CubeState:
-    loc = np.reshape(np.arange(0, 8, dtype=int), (2, 2, 2)) # first coordinate is always zero
-    cols = np.array((
+default_color_state = np.array((
     ("r", "g", "o"), #0 # never touch this
     ("r", "g", "w"), #1
     ("r", "b", "o"), #2
@@ -21,8 +18,14 @@ class CubeState:
     ("y", "g", "w"), #5
     ("y", "b", "o"), #6
     ("y", "b", "w")  #7
-    ), str) 
+    ), str)
 
+
+@dataclass
+class CubeState:
+    # Requires type hints for dataclass args, and default_factory for mutable arrays
+    loc: np.ndarray = field(default_factory=lambda: np.reshape(np.arange(0, 8, dtype=int), (2, 2, 2)))
+    cols: np.ndarray = field(default_factory=lambda: deepcopy(default_color_state))
 
 
 colors_full = ["red", "yellow", "green", "blue", "orange", "white"]
@@ -59,7 +62,6 @@ def twist_on_colors(new_cstate, ids, i1, i2, twist):
         case _:
             return
 
-axis_vals = (0, 1, 2)
 
 def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
     new_cstate = deepcopy(cstate)
@@ -117,6 +119,26 @@ def pretty_render(cstate):
     for i in range(len(col_arr)):
         s += " ".join(col_arr[i,:]) + "   " + " ".join(ids_arr[i,:]) + "\n"
     return s
+
+swap_rot_possible_perms = np.array([
+    [0, 1, 2],
+    [0, 2, 1],
+    [2, 1, 0],
+    [1, 0, 2]
+])
+
+
+def random_cube_state(seed=None):
+    rng = np.random.default_rng(seed)
+
+    loc = np.arange(8)
+    rng.shuffle(loc)
+    loc = np.reshape(loc, (2, 2, 2)) # first coordinate is always zero
+    cols = deepcopy(default_color_state)
+    for i in range(cols.shape[0]):
+        inds = swap_rot_possible_perms[rng.integers(4)]
+        cols[i,:] = cols[i,inds]
+    return CubeState(loc=loc, cols=cols)
 
 
 if __name__ == "__main__":
