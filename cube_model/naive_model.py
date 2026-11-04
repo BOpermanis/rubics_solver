@@ -5,7 +5,8 @@ from copy import deepcopy
 
 @dataclass
 class TwistAction:
-    twists: tuple[int] # for each of the rotation axis: -1, 0, 1
+    axis: int # 0, 1, 2 axis
+    twist: int # rotation around the axis -1, 0, 1
 
 
 @dataclass
@@ -58,15 +59,19 @@ def twist_on_colors(new_cstate, ids, i1, i2, twist):
         case _:
             return
 
+axis_vals = (0, 1, 2)
+
 def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
     new_cstate = deepcopy(cstate)
-    new_cstate.loc[1,:,:] = np.rot90(cstate.loc[1,:,:], action.twists[0], axes=(0, 1))
-    new_cstate.loc[:,1,:] = np.rot90(cstate.loc[:,1,:], action.twists[1], axes=(0, 1))
-    new_cstate.loc[:,:,1] = np.rot90(cstate.loc[:,:,1], action.twists[2], axes=(0, 1))
+    
+    axis = [slice(None)] * 3
+    axis[action.axis] = 1 
+    axis = tuple(axis)
+    new_cstate.loc[axis] = np.rot90(cstate.loc[axis], action.twist, axes=(0, 1)) # apply rotation along shifting axes
 
-    twist_on_colors(new_cstate, new_cstate.loc[1,:,:].flatten(), 1, 2, action.twists[0])
-    twist_on_colors(new_cstate, new_cstate.loc[:,1,:].flatten(), 0, 2, action.twists[1])
-    twist_on_colors(new_cstate, new_cstate.loc[:,:,1].flatten(), 0, 1, action.twists[2])
+    axis_idx = list(range(3))
+    axis_idx.pop(action.axis)
+    twist_on_colors(new_cstate, new_cstate.loc[axis].flatten(), *axis_idx, action.twist)
         
     return new_cstate
 
@@ -117,10 +122,10 @@ def pretty_render(cstate):
 if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 0)))))
-    print(pretty_render(apply_twist_action(zero_state, TwistAction((1, 0, 0)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((-1, 0, 0)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 1, 0)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, -1, 0)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, 1)))))
-    # print(pretty_render(apply_twist_action(zero_state, TwistAction((0, 0, -1)))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(0, 0))))
+    print(pretty_render(apply_twist_action(zero_state, TwistAction(0, 1))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(0, -1))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(1, 1))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(1, -1))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(2, 1))))
+    # print(pretty_render(apply_twist_action(zero_state, TwistAction(2, -1))))
