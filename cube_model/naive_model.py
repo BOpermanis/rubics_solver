@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 import numpy as np
 from collections import Counter
 from copy import deepcopy
+from hashlib import md5
+import json
 
 @dataclass
 class TwistAction:
@@ -27,6 +29,16 @@ class CubeState:
     loc: np.ndarray = field(default_factory=lambda: np.reshape(np.arange(0, 8, dtype=int), (2, 2, 2)))
     cols: np.ndarray = field(default_factory=lambda: deepcopy(default_color_state))
 
+    def hash(self):
+        return str(self.loc) + "\n" + str(self.cols)
+
+    def hash_md5(self):
+        stable_bytes = self.hash().encode('utf-8')
+        return md5(stable_bytes).hexdigest()
+
+# print(CubeState().hash())
+# print(CubeState().hash_md5())
+# exit()
 
 colors_full = ["red", "yellow", "green", "blue", "orange", "white"]
 colors = ['r', 'y', 'g', 'b', 'o', 'w']
@@ -63,8 +75,8 @@ def twist_on_colors(new_cstate, ids, i1, i2, twist):
             return
 
 
-def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
-    new_cstate = deepcopy(cstate)
+def apply_twist_action(cstate: CubeState, action: TwistAction, inplace=False) -> CubeState:
+    new_cstate = cstate if inplace else deepcopy(cstate)
     
     axis = [slice(None)] * 3
     axis[action.axis] = 1 
@@ -74,8 +86,9 @@ def apply_twist_action(cstate: CubeState, action: TwistAction) -> CubeState:
     axis_idx = list(range(3))
     axis_idx.pop(action.axis)
     twist_on_colors(new_cstate, new_cstate.loc[axis].flatten(), *axis_idx, action.twist)
-        
-    return new_cstate
+
+    if not inplace:
+        return new_cstate
 
 
 def render_cube(cstate: CubeState):
@@ -94,7 +107,7 @@ def fill_2x2(y, x, faces_flat, ids_flat, face):
     ids_flat[y:(y+2), x:(x+2)] = face[1]
 
 
-def apply_trans(fun, *arrs):
+def _apply_trans(fun, *arrs):
     return tuple(map(fun, arrs))
 
 
@@ -104,12 +117,12 @@ def render_cube_arr(cstate: CubeState):
     ids_flat = np.zeros((8, 6), str)
     faces_flat[...] = " "
     ids_flat[...] = " "
-    fill_2x2(0, 2, faces_flat, ids_flat, apply_trans(np.flipud,*faces["up"]))
+    fill_2x2(0, 2, faces_flat, ids_flat, _apply_trans(np.flipud,*faces["up"]))
     fill_2x2(2, 2, faces_flat, ids_flat, faces["front"])
     fill_2x2(4, 2, faces_flat, ids_flat, faces["down"])
-    fill_2x2(6, 2, faces_flat, ids_flat, apply_trans(np.flipud,*faces["back"]))
-    fill_2x2(2, 0, faces_flat, ids_flat, apply_trans(lambda a: np.rot90(a, k=-1), *faces["left"]))
-    fill_2x2(2, 4, faces_flat, ids_flat, apply_trans(lambda a: np.flipud(np.rot90(a, k=1)), *faces["right"]))
+    fill_2x2(6, 2, faces_flat, ids_flat, _apply_trans(np.flipud,*faces["back"]))
+    fill_2x2(2, 0, faces_flat, ids_flat, _apply_trans(lambda a: np.rot90(a, k=-1), *faces["left"]))
+    fill_2x2(2, 4, faces_flat, ids_flat, _apply_trans(lambda a: np.flipud(np.rot90(a, k=1)), *faces["right"]))
     return faces_flat, ids_flat
 
 
@@ -139,6 +152,13 @@ def random_cube_state(seed=None):
         inds = swap_rot_possible_perms[rng.integers(4)]
         cols[i,:] = cols[i,inds]
     return CubeState(loc=loc, cols=cols)
+
+
+def is_solved(cube_state:CubeState):
+    for colors, _ in render_cube(cube_state).values():
+        if len(np.unique(colors)) !=1:
+            return False
+    return True
 
 
 if __name__ == "__main__":

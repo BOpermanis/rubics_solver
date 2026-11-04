@@ -55,3 +55,4 @@ def test_if_randoms_are_valid():
             test_cube_sane(cube)
 
 test_if_randoms_are_valid()
+print("tests are ok")
