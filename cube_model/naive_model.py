@@ -30,7 +30,7 @@ class CubeState:
     cols: np.ndarray = field(default_factory=lambda: deepcopy(default_color_state))
 
     def hash(self):
-        return str(self.loc) + "\n" + str(self.cols)
+        return "".join(map(str, self.loc.flatten())) + "".join(self.cols.flatten())
 
     def hash_md5(self):
         stable_bytes = self.hash().encode('utf-8')
