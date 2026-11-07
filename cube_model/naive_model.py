@@ -10,6 +10,9 @@ class TwistAction:
     axis: int # 0, 1, 2 axis
     twist: int # rotation around the axis -1, 0, 1
 
+    def inv(self):
+        return TwistAction(axis=self.axis, twist=-self.twist)
+
 
 default_color_state = np.array((
     ("r", "g", "o"), #0 # never touch this
@@ -32,12 +35,21 @@ class CubeState:
     def hash(self):
         return "".join(map(str, self.loc.flatten())) + "".join(self.cols.flatten())
 
+    @staticmethod
+    def from_hash(h):
+        return CubeState(
+            loc = np.array(list(map(int, h[:8]))).reshape((2,2,2)),
+            cols = np.array(list(h[8:])).reshape(8,3)
+        )
+
+
     def hash_md5(self):
         stable_bytes = self.hash().encode('utf-8')
         return md5(stable_bytes).hexdigest()
 
 # print(CubeState().hash())
 # print(CubeState().hash_md5())
+# print(CubeState.from_hash(CubeState().hash()))
 # exit()
 
 colors_full = ["red", "yellow", "green", "blue", "orange", "white"]
@@ -154,6 +166,21 @@ def random_cube_state(seed=None):
     return CubeState(loc=loc, cols=cols)
 
 
+def random_cube_state_shuffled(seed=None, max_len=None):
+    rng = np.random.default_rng(seed)
+    if max_len is None:
+        n_moves = rng.integers(100)
+    else:
+        n_moves = max_len
+    actions = []
+    cube = CubeState()
+    for _ in range(n_moves):
+        action = TwistAction(rng.integers(3), rng.choice([-1, 1]))
+        apply_twist_action(cube, action, inplace=True)
+        actions.append(action)
+    return cube, [t.inv() for t in reversed(actions)]
+
+
 def is_solved(cube_state:CubeState):
     for colors, _ in render_cube(cube_state).values():
         if len(np.unique(colors)) !=1:
@@ -171,3 +198,13 @@ if __name__ == "__main__":
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(1, -1))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(2, 1))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(2, -1))))
+
+
+    cube, solution_actions = random_cube_state_shuffled(0)
+    print(pretty_render(cube))
+
+    for a in solution_actions:
+        apply_twist_action(cube, a, inplace=True)
+
+    print(pretty_render(cube))
+    
