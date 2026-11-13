@@ -42,10 +42,12 @@ class CubeState:
             cols = np.array(list(h[8:])).reshape(8,3)
         )
 
-
     def hash_md5(self):
         stable_bytes = self.hash().encode('utf-8')
         return md5(stable_bytes).hexdigest()
+
+    def __eq__(self, value):
+        return np.all(self.loc == value.loc) and np.all(self.cols == value.cols)
 
 # print(CubeState().hash())
 # print(CubeState().hash_md5())
@@ -186,6 +188,7 @@ def is_solved(cube_state:CubeState):
         if len(np.unique(colors)) !=1:
             return False
     return True
+
 
 
 if __name__ == "__main__":

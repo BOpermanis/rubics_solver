@@ -11,10 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cube_model.naive_model import CubeState, apply_twist_action, TwistAction, random_cube_state, is_solved, pretty_render, random_cube_state_shuffled
 
-seed = 0
-cube, gt_solution_actions = random_cube_state_shuffled(seed, max_len=7)
-
-rng = np.random.default_rng(seed)
 num_possible_combs = 3 ** 6 * math.factorial(7)
 
 def find(cube: CubeState):
@@ -48,11 +44,17 @@ def find(cube: CubeState):
             
     return None, []
 
-cube_solved, solution_actions = find(cube)
-print(pretty_render(cube))
-print(pretty_render(cube_solved))
-for a in solution_actions:
-    print(a)
+if __name__ == "__main__":
+    seed = 0
+    cube, gt_solution_actions = random_cube_state_shuffled(seed, max_len=7)
 
-for a in gt_solution_actions:
-    print(a)
+    rng = np.random.default_rng(seed)
+
+    cube_solved, solution_actions = find(cube)
+    print(pretty_render(cube))
+    print(pretty_render(cube_solved))
+    for a in solution_actions:
+        print(a)
+
+    for a in gt_solution_actions:
+        print(a)
