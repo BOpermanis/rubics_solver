@@ -31,7 +31,7 @@ def _get_inverse_solution(cube, action_inds, inplace=False):
     return cube
 
 
-def find(cube: CubeState):
+def find(cube: CubeState, max_depth=None):
     if is_solved(cube):
         return cube, []
     
@@ -40,7 +40,11 @@ def find(cube: CubeState):
     fwd_visited = set()
     bwd_visited = {cube_solved.hash():[]}
 
+    depth = 0
     while len(fwd_unvisited_solution_actions) > 0:
+        if depth >= max_depth:
+            return None, []
+        depth += 1
         new_unvisited_solution_actions = {}
         for h, current_action_inds in fwd_unvisited_solution_actions.items():
             cube = CubeState.from_hash(h)

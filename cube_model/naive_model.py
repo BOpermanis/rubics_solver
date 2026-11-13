@@ -158,11 +158,12 @@ swap_rot_possible_perms = np.array([
 def random_cube_state(seed=None):
     rng = np.random.default_rng(seed)
 
-    loc = np.arange(8)
+    loc = np.arange(7)
     rng.shuffle(loc)
+    loc = [0] + list(loc + 1)
     loc = np.reshape(loc, (2, 2, 2)) # first coordinate is always zero
     cols = deepcopy(default_color_state)
-    for i in range(cols.shape[0]):
+    for i in range(1, cols.shape[0]):
         inds = swap_rot_possible_perms[rng.integers(4)]
         cols[i,:] = cols[i,inds]
     return CubeState(loc=loc, cols=cols)
@@ -203,11 +204,13 @@ if __name__ == "__main__":
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(2, -1))))
 
 
-    cube, solution_actions = random_cube_state_shuffled(0)
+    # cube, solution_actions = random_cube_state_shuffled(0)
+    # for a in solution_actions:
+    #     apply_twist_action(cube, a, inplace=True)
+    
+    cube = random_cube_state(0)
     print(pretty_render(cube))
 
-    for a in solution_actions:
-        apply_twist_action(cube, a, inplace=True)
 
     print(pretty_render(cube))
     
