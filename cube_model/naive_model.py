@@ -177,7 +177,7 @@ def random_cube_state_shuffled(seed=None, max_len=None):
     actions = []
     cube = CubeState()
     for _ in range(n_moves):
-        action = TwistAction(rng.integers(3), rng.choice([-1, 1]))
+        action = TwistAction(int(rng.integers(3)), int(rng.choice([-1, 1])))
         apply_twist_action(cube, action, inplace=True)
         actions.append(action)
     return cube, [t.inv() for t in reversed(actions)]

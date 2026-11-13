@@ -16,15 +16,18 @@ num_possible_combs = 3 ** 6 * math.factorial(7)
 
 cube_solved = CubeState()
 
+possible_actions = [TwistAction(axis, twist) for axis, twist in product(range(3), (-1, 1))]
+
 
 def _apply_list_of_actions_inplace(cube:CubeState, actions: List[TwistAction]):
     for t in actions:
         apply_twist_action(cube, t, inplace=True)
 
 
-def _get_inverse_solution(actions):
-    cube = deepcopy(cube_solved)
-    _apply_list_of_actions_inplace(cube, (t.inv() for t in reversed(actions)))
+def _get_inverse_solution(cube, action_inds, inplace=False):
+    if not inplace:
+        cube = deepcopy(cube)
+    _apply_list_of_actions_inplace(cube, (possible_actions[i].inv() for i in reversed(action_inds)))
     return cube
 
 
@@ -32,7 +35,6 @@ def find(cube: CubeState):
     if is_solved(cube):
         return cube, []
     
-    possible_actions = [TwistAction(axis, twist) for axis, twist in product(range(3), (-1, 1))]
     
     fwd_unvisited_solution_actions = {cube.hash():[]}
     fwd_visited = set()
@@ -42,7 +44,6 @@ def find(cube: CubeState):
         while len(fwd_unvisited_solution_actions) > 0:
             new_unvisited_solution_actions = {}
             for h, current_action_inds in fwd_unvisited_solution_actions.items():
-                
                 cube = CubeState.from_hash(h)
                 pbar.update(1)
 
@@ -57,27 +58,19 @@ def find(cube: CubeState):
                         continue
 
                     if is_solved(next_cube):
-                        print(11111)
                         return next_cube, [possible_actions[j] for j in next_action_inds]
 
-                    next_cube_inv = _get_inverse_solution([possible_actions[_] for _ in next_action_inds])
+                    next_cube_inv = _get_inverse_solution(cube_solved, next_action_inds, inplace=False)
                     h1_inv = next_cube_inv.hash()
 
                     if h1_inv == h1:
-                        print(22222)
-                        inverse_actions = [possible_actions[j].inv() for j in reversed(next_action_inds)]
-                        _apply_list_of_actions_inplace(next_cube, inverse_actions)
-                        return next_cube, [possible_actions[j] for j in next_action_inds] + inverse_actions
+                        _apply_list_of_actions_inplace(next_cube, (possible_actions[j] for j in next_action_inds))
+                        return next_cube, [possible_actions[j] for j in next_action_inds] * 2
                     
-                    if h1_inv in bwd_visited:
-                        print(3333)
-                        inverse_actions = [possible_actions[j].inv() for j in reversed(bwd_visited[h1_inv])]
-                        print(inverse_actions)
-                        _apply_list_of_actions_inplace(next_cube, inverse_actions)
-                        print(pretty_render(next_cube))
-                        # exit()
-                        return next_cube, [possible_actions[j] for j in next_action_inds] + inverse_actions
-
+                    if h1 in bwd_visited:
+                        _apply_list_of_actions_inplace(next_cube, (possible_actions[j] for j in bwd_visited[h1]))
+                        return next_cube, [possible_actions[j] for j in next_action_inds] + [possible_actions[_] for _ in bwd_visited[h1]]
+                    
                     new_unvisited_solution_actions[h1] = bwd_visited[h1_inv] = next_action_inds
             
             fwd_visited.add(h)
@@ -88,9 +81,9 @@ def find(cube: CubeState):
 
 if __name__ == "__main__":
     seed = 0
-    cube, gt_solution_actions = random_cube_state_shuffled(seed, max_len=2)
+    cube, gt_solution_actions = random_cube_state_shuffled(seed, max_len=21)
 
-    # gt_solution_actions = [TwistAction(0, -1), TwistAction(0, 1)]
+    # gt_solution_actions = [TwistAction(0, 1), TwistAction(0, 1)]
     # cube = CubeState()
     # for t in gt_solution_actions:
     #     apply_twist_action(cube, t, inplace=True)
@@ -103,6 +96,6 @@ if __name__ == "__main__":
 
     for a in solution_actions:
         print(a)
-
+    print("-------------------")
     for a in gt_solution_actions:
         print(a)
