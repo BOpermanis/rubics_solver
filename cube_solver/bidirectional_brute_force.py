@@ -42,7 +42,7 @@ def find(cube: CubeState, max_depth=None):
 
     depth = 0
     while len(fwd_unvisited_solution_actions) > 0:
-        if depth >= max_depth:
+        if max_depth is not None and depth >= max_depth:
             return None, []
         depth += 1
         new_unvisited_solution_actions = {}
