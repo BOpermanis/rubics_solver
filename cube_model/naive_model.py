@@ -15,14 +15,14 @@ class TwistAction:
 
 
 default_color_state = np.array((
-    ("r", "g", "o"), #0 # never touch this
+    ("r", "g", "y"), #0 # never touch this
     ("r", "g", "w"), #1
-    ("r", "b", "o"), #2
+    ("r", "b", "y"), #2
     ("r", "b", "w"), #3
-    ("y", "g", "o"), #4
-    ("y", "g", "w"), #5
-    ("y", "b", "o"), #6
-    ("y", "b", "w")  #7
+    ("o", "g", "y"), #4
+    ("o", "g", "w"), #5
+    ("o", "b", "y"), #6
+    ("o", "b", "w")  #7
     ), str)
 
 
@@ -48,6 +48,7 @@ class CubeState:
 
     def __eq__(self, value):
         return np.all(self.loc == value.loc) and np.all(self.cols == value.cols)
+
 
 # print(CubeState().hash())
 # print(CubeState().hash_md5())
@@ -195,6 +196,7 @@ def is_solved(cube_state:CubeState):
 if __name__ == "__main__":
     zero_state = CubeState()
     print(pretty_render(zero_state))
+    # exit()
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(0, 0))))
     print(pretty_render(apply_twist_action(zero_state, TwistAction(0, 1))))
     # print(pretty_render(apply_twist_action(zero_state, TwistAction(0, -1))))
