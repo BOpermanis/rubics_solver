@@ -13,6 +13,8 @@ class TwistAction:
     def inv(self):
         return TwistAction(axis=self.axis, twist=-self.twist)
 
+    
+
 
 default_color_state = np.array((
     ("r", "g", "y"), #0 # never touch this
@@ -90,18 +92,27 @@ def twist_on_colors(new_cstate, ids, i1, i2, twist):
             return
 
 
-def apply_twist_action(cstate: CubeState, action: TwistAction, inplace=False) -> CubeState:
-    new_cstate = cstate if inplace else deepcopy(cstate)
+def _apply_one_twist_action_inplace(cstate: CubeState, action: TwistAction):
     
     axis = [slice(None)] * 3
     axis[action.axis] = 1 
     axis = tuple(axis)
-    new_cstate.loc[axis] = np.rot90(cstate.loc[axis], action.twist, axes=(0, 1)) # apply rotation along shifting axes
+    cstate.loc[axis] = np.rot90(cstate.loc[axis], action.twist, axes=(0, 1)) # apply rotation along shifting axes
 
     axis_idx = list(range(3))
     axis_idx.pop(action.axis)
-    twist_on_colors(new_cstate, new_cstate.loc[axis].flatten(), *axis_idx, action.twist)
+    twist_on_colors(cstate, cstate.loc[axis].flatten(), *axis_idx, action.twist)
 
+
+def apply_twist_action(cstate: CubeState, actions: TwistAction | list[TwistAction], inplace=False) -> CubeState:
+    new_cstate = cstate if inplace else deepcopy(cstate)
+
+    if not isinstance(actions, list):
+        actions = [actions]
+
+    for a in actions:
+        _apply_one_twist_action_inplace(new_cstate, a)
+        
     if not inplace:
         return new_cstate
 
